@@ -35,6 +35,7 @@ namespace HaldorIdols
 
         private int _lastScreenWidth;
         private int _lastScreenHeight;
+        private bool _loggedLayout;
 
         internal bool IsAlive => _root != null;
 
@@ -259,6 +260,15 @@ namespace HaldorIdols
             _root.anchoredPosition = new Vector2(
                 topCenterLocal.x - _host.rect.xMin,
                 topCenterLocal.y - _host.rect.yMin + localGap);
+
+            if (!_loggedLayout)
+            {
+                _loggedLayout = true;
+                Plugin.Log.LogInfo("Shop tabs placed: panel " + _panel.rect.width.ToString("0") + "x" +
+                                   _panel.rect.height.ToString("0") + ", tab " + _tabSize.x.ToString("0") + "x" +
+                                   _tabSize.y.ToString("0") + ", host '" + _host.name + "', pos " +
+                                   _root.anchoredPosition);
+            }
 
             ClampToScreen();
         }
