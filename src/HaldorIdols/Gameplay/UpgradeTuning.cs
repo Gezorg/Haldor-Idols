@@ -10,9 +10,9 @@ namespace HaldorIdols
     /// </summary>
     internal static class UpgradeTuning
     {
-        internal static void Apply()
+        internal static void Apply(ObjectDB db = null)
         {
-            ObjectDB db = ObjectDB.instance;
+            db = db != null ? db : ObjectDB.instance;
             if (db == null) return;
 
             float chance = ModConfig.SuccessChance != null ? ModConfig.SuccessChance.Value : 0.8f;
@@ -46,9 +46,23 @@ namespace HaldorIdols
     [HarmonyPatch(typeof(ObjectDB), "Awake")]
     internal static class ObjectDbAwakePatch
     {
-        private static void Postfix()
+        private static void Postfix(ObjectDB __instance)
         {
-            UpgradeTuning.Apply();
+            UpgradeTuning.Apply(__instance);
+        }
+    }
+
+    /// <summary>
+    /// The main menu swaps the object database for the one loaded from disk
+    /// (FejdStartup.SetupObjectDB calls ObjectDB.CopyOtherDB), which replaces
+    /// m_items with fresh prefabs and resets the idol chance. Re-apply it there.
+    /// </summary>
+    [HarmonyPatch(typeof(ObjectDB), "CopyOtherDB")]
+    internal static class ObjectDbCopyPatch
+    {
+        private static void Postfix(ObjectDB __instance)
+        {
+            UpgradeTuning.Apply(__instance);
         }
     }
 }
