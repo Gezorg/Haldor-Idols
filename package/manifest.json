@@ -1,0 +1,10 @@
+{
+  "name": "HaldorIdols",
+  "description": "Adds all 16 vanilla Battle and Protection idols to Haldor's shop in a separate Idols tab, with boss-progression gating, configurable prices and an 80% upgrade chance.",
+  "version_number": "1.0.0",
+  "website_url": "https://github.com/Gezorg/Haldor-Idols",
+  "dependencies": [
+    "denikson-BepInExPack_Valheim-5.4.2351",
+    "ValheimModding-Jotunn-2.30.2"
+  ]
+}

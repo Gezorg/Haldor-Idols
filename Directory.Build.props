@@ -1,0 +1,20 @@
+<Project>
+  <!--
+    Local paths are intentionally not committed.
+    Copy local.props.example to local.props and adjust the two paths,
+    or set the VALHEIM_DIR and BEPINEX_DIR environment variables.
+  -->
+  <Import Project="$(MSBuildThisFileDirectory)local.props" Condition="Exists('$(MSBuildThisFileDirectory)local.props')" />
+
+  <PropertyGroup>
+    <ValheimDir Condition="'$(ValheimDir)' == ''">$(VALHEIM_DIR)</ValheimDir>
+    <BepInExDir Condition="'$(BepInExDir)' == ''">$(BEPINEX_DIR)</BepInExDir>
+  </PropertyGroup>
+
+  <Target Name="CheckLocalPaths" BeforeTargets="BeforeBuild">
+    <Error Condition="'$(ValheimDir)' == ''" Text="ValheimDir is not set. Create local.props (see local.props.example) or set VALHEIM_DIR." />
+    <Error Condition="'$(BepInExDir)' == ''" Text="BepInExDir is not set. Create local.props (see local.props.example) or set BEPINEX_DIR." />
+    <Error Condition="!Exists('$(ValheimDir)\valheim_Data\Managed\assembly_valheim.dll')" Text="assembly_valheim.dll not found under $(ValheimDir)." />
+    <Error Condition="!Exists('$(BepInExDir)\core\BepInEx.dll')" Text="BepInEx.dll not found under $(BepInExDir)." />
+  </Target>
+</Project>

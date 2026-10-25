@@ -1,0 +1,8 @@
+bin/
+obj/
+dist/
+local.props
+.vs/
+.idea/
+*.user
+*.suo

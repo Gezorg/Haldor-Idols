@@ -1,0 +1,12 @@
+<Project>
+  <!--
+    Copy this file to local.props and point the paths at your own installation.
+    local.props is git-ignored.
+  -->
+  <PropertyGroup>
+    <!-- Folder that contains valheim.exe -->
+    <ValheimDir>C:\Program Files (x86)\Steam\steamapps\common\Valheim</ValheimDir>
+    <!-- Folder that contains core\BepInEx.dll and plugins\ValheimModding-Jotunn\Jotunn.dll -->
+    <BepInExDir>%APPDATA%\Thunderstore Mod Manager\DataFolder\Valheim\profiles\Default\BepInEx</BepInExDir>
+  </PropertyGroup>
+</Project>
