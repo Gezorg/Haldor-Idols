@@ -12,7 +12,7 @@ namespace HaldorIdols
     {
         internal const float MinChance = 0.05f;
         internal const float MaxChance = 0.99f;
-        private const float DefaultChance = 0.8f;
+        private const float DefaultChance = 0.65f;
 
         private static float _lastChance = float.NaN;
         private static int _lastApplied = -1;

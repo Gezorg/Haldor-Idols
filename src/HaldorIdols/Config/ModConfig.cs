@@ -42,7 +42,7 @@ namespace HaldorIdols
             SuccessChance = config.BindConfig(
                 "General",
                 "SuccessChance",
-                0.8f,
+                0.65f,
                 "Chance that an idol upgrade succeeds. Vanilla is 0.65. On failure the item is destroyed. " +
                 "The roll happens on the client that performs the upgrade.",
                 true,

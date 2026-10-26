@@ -6,7 +6,7 @@
 - Added a separate **Idols** tab; vanilla goods remain under **Goods**.
 - Added boss-progression gating for the eight idol tiers.
 - Added configurable prices (default 50–1000 coins) and progression keys.
-- Raised the idol upgrade success chance from 65% to 80% (configurable).
+- Configurable idol upgrade chance: vanilla's 65% by default, 5–99% in the config.
 - Added a **Sell** tab where Haldor buys all 72 vanilla creature trophies at balanced,
   configurable prices. Trophy selling can be disabled completely.
 - Added English and Russian tab captions.

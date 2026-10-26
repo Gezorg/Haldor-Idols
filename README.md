@@ -1,8 +1,15 @@
 # Haldor Idols
 
-Adds all **16 vanilla Battle and Protection idols** to Haldor's shop, in a separate **Idols** tab,
-with boss-progression gating, configurable prices and an 80% upgrade chance. Haldor also buys
-trophies in a **Sell** tab, and config edits apply without restarting the game.
+Haldor sells all **16 vanilla Battle and Protection idols** in a separate **Idols** tab, buys
+trophies back in a **Sell** tab, and lets you tune the idol upgrade chance. Progression, prices
+and trophy prices are configurable, and config edits apply without restarting the game.
+
+The mod does three things:
+
+1. **Buying idols** — the 16 vanilla idols, gated by boss progression and priced per tier.
+2. **Selling trophies** — Haldor buys every vanilla creature trophy at configurable prices.
+3. **Configurable upgrade chance** — the idol refinement roll, 65% by default, adjustable from
+   5% to 99%.
 
 - No custom items, no custom assets — only the idols and trophies that already exist in Valheim 1.0.
 - Server-synced config: the host decides prices, progression, trophy prices and the upgrade chance.
@@ -17,7 +24,7 @@ trophies in a **Sell** tab, and config edits apply without restarting the game.
 | Idols tab | Haldor's window gets three tabs: vanilla goods under **Goods**, the 16 idols under **Idols**, trophy selling under **Sell**. |
 | Progression | The next biome's idols unlock after you kill that biome's boss, exactly like Haldor Expansion. |
 | Prices | Every tier has its own price in the config file. Defaults: 50 → 1000 coins. |
-| Upgrade chance | Vanilla idols succeed 65% of the time. This mod raises it to **80%** for all 16 idols. |
+| Upgrade chance | All 16 idols use one roll. The default is vanilla's **65%**; set anything from 5% to 99% in the config. |
 | Trophy selling | Haldor buys 72 vanilla creature trophies at configurable prices. The whole feature can be switched off. |
 | Live config | Saving the `.cfg` while the game is running re-applies prices, progression, the upgrade chance and trophy prices. |
 | Localization | Tab captions follow the game language (English and Russian included). |
@@ -39,11 +46,14 @@ Battle and Protection idols of the same tier cost the same.
 
 ## Upgrade chance
 
-All 16 idols use the same roll. With the default setting:
+All 16 idols use the same roll, and the chance is a single config value. With the default
+(vanilla) setting:
 
-- **80%** — the item gains one quality level.
-- **20%** — the attempt fails and the item is destroyed, returning part of the materials (vanilla behaviour).
+- **65%** — the item gains one quality level.
+- **35%** — the attempt fails and the item is destroyed, returning part of the materials
+  (vanilla behaviour).
 
+Raise `SuccessChance` if you want a friendlier refinement, lower it for a harsher economy.
 The roll happens on the client that performs the upgrade, which is why every player needs the mod.
 
 ## Trophy selling
@@ -87,7 +97,7 @@ On a dedicated server the host's values are sent to all clients.
 ```ini
 [General]
 Enabled = true
-SuccessChance = 0.8
+SuccessChance = 0.65
 
 [Trophies]
 Enabled = true
@@ -120,7 +130,7 @@ TrophyEikthyr = 250
 ; ... one line for each of the 72 trophies
 ```
 
-- `SuccessChance` accepts 0.05–0.99.
+- `SuccessChance` accepts 0.05–0.99; the default is 0.65, the vanilla value.
 - Leave a progression key empty to make that tier always available.
 - Idol prices are per single idol; the shop always sells one at a time.
 - Trophy prices are 0–1,000,000 coins per trophy; `0` disables buying that trophy.
@@ -154,7 +164,7 @@ overwrite the edit on the next synchronization.
 The effective values are written to the log after a sync:
 
 ```
-[Haldor Idols] Config synchronized from server: Enabled=True, TrophySelling=True, SuccessChance=80%, Wooden=50, Bloodgold=1000
+[Haldor Idols] Config synchronized from server: Enabled=True, TrophySelling=True, SuccessChance=65%, Wooden=50, Bloodgold=1000
 ```
 
 ## Trust model
@@ -196,7 +206,7 @@ chance 5–99%) so a malformed config cannot break the game.
 
 - Idols bought from Haldor are normal vanilla items: they can be stored, traded and used at the
   Forge of Potential.
-- The 80% chance applies to **all** idols, including ones found in chests.
+- The configured chance applies to **all** idols, including ones found in chests.
 - Because trophies get a sell value, their tooltip shows that value while trophy selling is on.
   Turning the feature off restores the vanilla value (0).
 - Multiplayer: install the same mod version on the server and on every client.
