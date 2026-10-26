@@ -35,6 +35,7 @@ namespace HaldorIdols
 
         private int _lastScreenWidth;
         private int _lastScreenHeight;
+        private Vector2 _lastPanelSize;
         private bool _loggedLayout;
 
         internal bool IsAlive => _root != null;
@@ -233,7 +234,21 @@ namespace HaldorIdols
         internal void Tick()
         {
             if (!IsAlive) return;
-            if (Screen.width == _lastScreenWidth && Screen.height == _lastScreenHeight) return;
+
+            // StoreGui.Update also runs while the window is hidden; world corners
+            // of an inactive panel are not meaningful, so skip those frames.
+            if (_panel == null || !_panel.gameObject.activeInHierarchy) return;
+
+            // The shop panel is resized by the game when the UI scale, the
+            // resolution or the inventory layout changes; the bar has to follow.
+            Vector2 panelSize = _panel.rect.size;
+            if (Screen.width == _lastScreenWidth &&
+                Screen.height == _lastScreenHeight &&
+                panelSize == _lastPanelSize)
+            {
+                return;
+            }
+
             UpdateLayout();
         }
 
@@ -248,6 +263,7 @@ namespace HaldorIdols
 
             _lastScreenWidth = Screen.width;
             _lastScreenHeight = Screen.height;
+            _lastPanelSize = _panel.rect.size;
 
             _root.sizeDelta = new Vector2(TotalWidth(), _tabSize.y);
 

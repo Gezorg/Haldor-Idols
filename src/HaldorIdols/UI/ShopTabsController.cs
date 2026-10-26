@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using HarmonyLib;
@@ -20,8 +21,15 @@ namespace HaldorIdols
         private static ShopTabsView _view;
         private static bool _uiAvailable;
         private static bool _uiFailed;
+        private static int _visibleCount;
 
         internal static int ActiveTab => _activeTab;
+
+        /// <summary>
+        /// Number of rows StoreGui currently sees. Used to keep SelectItem safe
+        /// when a tab has no items at all.
+        /// </summary>
+        internal static int VisibleCount => _uiAvailable ? _visibleCount : int.MaxValue;
 
         internal static string Token(int tab)
         {
@@ -30,11 +38,13 @@ namespace HaldorIdols
 
         /// <summary>
         /// Drop-in replacement for Trader.GetAvailableItems() inside StoreGui.
-        /// If the tab bar could not be built, the full list is returned so the
-        /// idols stay reachable in a single list.
+        /// When the tab bar is unavailable the full list is returned so the idols
+        /// stay reachable in a single list.
         /// </summary>
         internal static List<Trader.TradeItem> GetVisibleItems(Trader trader)
         {
+            if (trader == null) return new List<Trader.TradeItem>(0);
+
             List<Trader.TradeItem> available = trader.GetAvailableItems();
             if (!_uiAvailable) return available;
 
@@ -52,19 +62,46 @@ namespace HaldorIdols
                     visible.Add(item);
             }
 
-            // StoreGui cannot handle an empty list: SelectItem(0) would index [0].
-            // Falling back to the full list keeps the window usable.
-            if (visible.Count == 0) return available;
-
+            _visibleCount = visible.Count;
             return visible;
+        }
+
+        /// <summary>
+        /// Called right before StoreGui rebuilds its row list, so the idols are
+        /// always present in Trader.m_items no matter how the shop was opened.
+        /// </summary>
+        internal static void PrepareList(StoreGui gui)
+        {
+            if (gui == null) return;
+
+            Trader trader = TraderField != null ? TraderField.GetValue(gui) as Trader : null;
+            if (!HaldorShop.IsHaldor(trader)) return;
+
+            HaldorShop.Refresh(trader);
         }
 
         internal static void Sync(StoreGui gui)
         {
-            if (gui == null || gui.m_rootPanel == null || _uiFailed) return;
+            if (gui == null || gui.m_rootPanel == null) return;
 
             Trader trader = TraderField != null ? TraderField.GetValue(gui) as Trader : null;
-            if (!HaldorShop.IsHaldor(trader)) return;
+            bool wasAvailable = _uiAvailable;
+
+            // The tab bar only belongs to Haldor; other traders keep vanilla UI.
+            if (!HaldorShop.IsHaldor(trader) || !ModConfig.Enabled.Value || _uiFailed)
+            {
+                _view?.SetVisible(false);
+                _uiAvailable = false;
+                if (_activeTab != TabGoods)
+                {
+                    _activeTab = TabGoods;
+                    _view?.Refresh();
+                }
+
+                // The list was drawn with the old filter; rebuild it unfiltered.
+                if (wasAvailable) RefreshList(gui);
+                return;
+            }
 
             bool created = false;
             try
@@ -72,14 +109,14 @@ namespace HaldorIdols
                 if (_view == null || !_view.IsAlive)
                 {
                     _view = ShopTabsView.Create(gui);
-                    _uiAvailable = true;
                     created = true;
                 }
 
+                _uiAvailable = true;
                 _view.SetVisible(true);
                 _view.Refresh();
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
                 _uiFailed = true;
                 _uiAvailable = false;
@@ -110,9 +147,9 @@ namespace HaldorIdols
         internal static void OnHide()
         {
             _view?.SetVisible(false);
-            if (_activeTab == TabGoods) return;
+
+            // The next Show calls Sync(), which refreshes the bar for the Goods tab.
             _activeTab = TabGoods;
-            _view?.Refresh();
         }
 
         internal static void Tick()
@@ -126,13 +163,39 @@ namespace HaldorIdols
             _view = null;
             _uiAvailable = false;
             _uiFailed = false;
+            _visibleCount = 0;
             _activeTab = TabGoods;
+        }
+
+        /// <summary>
+        /// Re-applies prices, progression and the master switch while the shop is
+        /// open, so config edits (including a server sync) take effect immediately.
+        /// </summary>
+        internal static void RefreshOpenShop()
+        {
+            StoreGui gui = StoreGui.instance;
+            if (gui == null || !StoreGui.IsVisible()) return;
+
+            Trader trader = TraderField != null ? TraderField.GetValue(gui) as Trader : null;
+            if (!HaldorShop.IsHaldor(trader)) return;
+
+            HaldorShop.Refresh(trader);
+            Sync(gui);
+            RefreshList(gui);
         }
 
         private static void RefreshList(StoreGui gui)
         {
-            if (FillListMethod == null) return;
-            FillListMethod.Invoke(gui, null);
+            if (FillListMethod == null || gui == null) return;
+
+            try
+            {
+                FillListMethod.Invoke(gui, null);
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogError("Could not rebuild the shop list: " + e);
+            }
         }
     }
 }

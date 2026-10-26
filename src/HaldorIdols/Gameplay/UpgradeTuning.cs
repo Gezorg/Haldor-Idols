@@ -10,12 +10,30 @@ namespace HaldorIdols
     /// </summary>
     internal static class UpgradeTuning
     {
+        internal const float MinChance = 0.05f;
+        internal const float MaxChance = 0.99f;
+        private const float DefaultChance = 0.8f;
+
+        private static float _lastChance = float.NaN;
+        private static int _lastApplied = -1;
+
         internal static void Apply(ObjectDB db = null)
         {
             db = db != null ? db : ObjectDB.instance;
             if (db == null) return;
 
-            float chance = ModConfig.SuccessChance != null ? ModConfig.SuccessChance.Value : 0.8f;
+            // The value can arrive from a server through Jotunn's config sync,
+            // which bypasses BepInEx' acceptable-value clamping. Never trust it.
+            float chance = ModConfig.SuccessChance != null ? ModConfig.SuccessChance.Value : DefaultChance;
+            if (float.IsNaN(chance) || float.IsInfinity(chance)) chance = DefaultChance;
+            float clamped = Mathf.Clamp(chance, MinChance, MaxChance);
+            if (!Mathf.Approximately(chance, clamped))
+            {
+                Plugin.Log.LogWarning("SuccessChance " + chance + " is outside " + MinChance + ".." + MaxChance +
+                                      "; using " + clamped + ".");
+            }
+            chance = clamped;
+
             int applied = 0;
 
             for (int tier = 0; tier < IdolCatalog.TierNames.Length; tier++)
@@ -24,8 +42,13 @@ namespace HaldorIdols
                 applied += ApplyTo(db, IdolCatalog.ArmorPrefabs[tier], chance);
             }
 
-            Plugin.Log.LogInfo("Idol upgrade chance set to " + chance.ToString("P0") +
-                               " on " + applied + "/16 idols.");
+            if (applied != _lastApplied || !Mathf.Approximately(chance, _lastChance))
+            {
+                _lastApplied = applied;
+                _lastChance = chance;
+                Plugin.Log.LogInfo("Idol upgrade chance set to " + chance.ToString("P0") +
+                                   " on " + applied + "/16 idols.");
+            }
         }
 
         private static int ApplyTo(ObjectDB db, string prefabName, float chance)

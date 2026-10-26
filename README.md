@@ -84,6 +84,36 @@ Bloodgold = defeated_fader
 - Leave a progression key empty to make that tier always available.
 - Prices are per single idol; the shop always sells one at a time.
 
+## Multiplayer and config authority
+
+**The host's config always wins.** Every setting is bound as server-synced
+(Jotunn `BindConfig(..., synced: true)`), so:
+
+- when a client connects, the server sends its values and they are applied in memory
+  before the world loads;
+- the client's own `.cfg` file is **not** overwritten — it keeps the local values and is
+  used again in singleplayer;
+- editing the config on the host while the server is running pushes the changed values to
+  connected clients right away (Jotunn re-sends on config reload);
+- if the server does not run the mod, each client falls back to its own file, so install
+  the same version on the server and on every client.
+
+The effective values are written to the log after a sync:
+
+```
+[Haldor Idols] Config synchronized from server: Enabled=True, SuccessChance=80%, Wooden=50, Bloodgold=1000
+```
+
+## Trust model
+
+Prices and progression are enforced by the game client, exactly like vanilla Haldor prices:
+Valheim's trade window adds the item to the local inventory and removes the coins on the
+client. A modified client can therefore buy for less or unlock tiers early. The mod adds no
+network endpoints of its own and does not widen that surface; it also clamps every value it
+receives (prices 1–1,000,000, success chance 5–99%) so a malformed config cannot break the
+game.
+
+
 ## Installation
 
 ### With Gale / Thunderstore Mod Manager (recommended)

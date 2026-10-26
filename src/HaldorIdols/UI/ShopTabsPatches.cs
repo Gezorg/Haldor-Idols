@@ -48,12 +48,46 @@ namespace HaldorIdols
         }
     }
 
+    /// <summary>
+    /// Vanilla StoreGui.SelectItem indexes the trade list without checking it.
+    /// An empty tab (for example when every idol is still locked) would throw,
+    /// so the selection is cleared instead.
+    /// </summary>
+    [HarmonyPatch(typeof(StoreGui), "SelectItem")]
+    internal static class StoreGuiSelectItemPatch
+    {
+        private static readonly FieldInfo SelectedItemField =
+            AccessTools.Field(typeof(StoreGui), "m_selectedItem");
+
+        private static bool Prefix(StoreGui __instance, int index)
+        {
+            if (index < ShopTabsController.VisibleCount) return true;
+
+            if (SelectedItemField != null) SelectedItemField.SetValue(__instance, null);
+            return false;
+        }
+    }
+
     [HarmonyPatch(typeof(StoreGui), nameof(StoreGui.Show))]
     internal static class StoreGuiShowPatch
     {
         private static void Postfix(StoreGui __instance)
         {
             ShopTabsController.Sync(__instance);
+        }
+    }
+
+    /// <summary>
+    /// The trade list is rebuilt from Trader.m_items on every FillList call.
+    /// Make sure the idols are present before that happens, regardless of how
+    /// the window was opened (Interact, a dialog button or another mod).
+    /// </summary>
+    [HarmonyPatch(typeof(StoreGui), "FillList")]
+    internal static class StoreGuiFillListPatch
+    {
+        private static void Prefix(StoreGui __instance)
+        {
+            ShopTabsController.PrepareList(__instance);
         }
     }
 

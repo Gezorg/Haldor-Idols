@@ -52,7 +52,8 @@ namespace HaldorIdols
                     tier,
                     DefaultPrices[i],
                     $"Price in coins for one {tier} idol (both Battle and Protection).",
-                    true);
+                    true,
+                    acceptableValues: new AcceptableValueRange<int>(1, 1000000));
 
                 Keys[i] = config.BindConfig(
                     "Progression",
