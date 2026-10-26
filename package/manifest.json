@@ -1,6 +1,6 @@
 {
   "name": "HaldorIdols",
-  "description": "Adds all 16 vanilla Battle and Protection idols to Haldor's shop in a separate Idols tab, with boss-progression gating, configurable prices and an 80% upgrade chance.",
+  "description": "Adds all 16 vanilla idols to Haldor's shop in a separate Idols tab with boss-progression gating and configurable prices, raises idol upgrade chance to 80%, and lets Haldor buy trophies in a Sell tab. Config hot-reloads.",
   "version_number": "1.0.0",
   "website_url": "https://github.com/Gezorg/Haldor-Idols",
   "dependencies": [

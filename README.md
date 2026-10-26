@@ -1,10 +1,11 @@
 # Haldor Idols
 
 Adds all **16 vanilla Battle and Protection idols** to Haldor's shop, in a separate **Idols** tab,
-with boss-progression gating, configurable prices and an 80% upgrade chance.
+with boss-progression gating, configurable prices and an 80% upgrade chance. Haldor also buys
+trophies in a **Sell** tab, and config edits apply without restarting the game.
 
-- No custom items, no custom assets — only the idols that already exist in Valheim 1.0.
-- Server-synced config: the host decides prices, progression and the upgrade chance.
+- No custom items, no custom assets — only the idols and trophies that already exist in Valheim 1.0.
+- Server-synced config: the host decides prices, progression, trophy prices and the upgrade chance.
 - Works in singleplayer and multiplayer. **Everyone must have the mod installed.**
 
 ---
@@ -13,10 +14,12 @@ with boss-progression gating, configurable prices and an 80% upgrade chance.
 
 | Feature | Details |
 |---|---|
-| Idols tab | Haldor's window gets a second tab. Vanilla goods stay under **Goods**, the 16 idols are under **Idols**. |
+| Idols tab | Haldor's window gets three tabs: vanilla goods under **Goods**, the 16 idols under **Idols**, trophy selling under **Sell**. |
 | Progression | The next biome's idols unlock after you kill that biome's boss, exactly like Haldor Expansion. |
 | Prices | Every tier has its own price in the config file. Defaults: 50 → 1000 coins. |
 | Upgrade chance | Vanilla idols succeed 65% of the time. This mod raises it to **80%** for all 16 idols. |
+| Trophy selling | Haldor buys 72 vanilla creature trophies at configurable prices. The whole feature can be switched off. |
+| Live config | Saving the `.cfg` while the game is running re-applies prices, progression, the upgrade chance and trophy prices. |
 | Localization | Tab captions follow the game language (English and Russian included). |
 
 ## Default prices and progression
@@ -43,6 +46,33 @@ All 16 idols use the same roll. With the default setting:
 
 The roll happens on the client that performs the upgrade, which is why every player needs the mod.
 
+## Trophy selling
+
+Haldor buys every vanilla creature trophy in the **Sell** tab. Select a trophy in the list and
+press the vanilla **Sell** button; the whole stack is sold at once, exactly like vanilla
+valuables, and the row already shows the total payout. Prices follow the biome progression, so
+boss trophies are the main source of coins:
+
+| Biome | Examples | Typical payout |
+|---|---|---:|
+| Meadows | Boar, Deer, Neck, Eikthyr | 10–250 |
+| Black Forest | Greydwarf, Troll, The Elder | 15–300 |
+| Swamp | Draugr, Abomination, Bonemass | 15–350 |
+| Mountain | Wolf, Stone Golem, Moder | 30–400 |
+| Ocean | Serpent, Bonemaw | 90 |
+| Plains | Fuling, Lox, Yagluth | 25–450 |
+| Mistlands | Seeker, Gjall, The Queen | 15–500 |
+| Ashlands | Charred, Morgen, Fader | 40–600 |
+| Deep North | Bear, Jotun, Barka | 40–120 |
+
+A full set of one idol type costs 3300 coins (6600 for both Battle and Protection), so selling a
+few boss trophies funds the next tier without making idols trivial. Every price is configurable,
+and `0` means Haldor does not buy that trophy.
+
+Trophy selling adds no custom items or assets: the mod only writes the sell value into the
+existing trophy prefabs and builds the Sell tab from your inventory. Turning
+`[Trophies] Enabled` off hides the tab and restores the vanilla value (trophies are not sellable).
+
 ## Configuration
 
 The config file is created on first launch:
@@ -58,6 +88,9 @@ On a dedicated server the host's values are sent to all clients.
 [General]
 Enabled = true
 SuccessChance = 0.8
+
+[Trophies]
+Enabled = true
 
 [Prices]
 Wooden = 50
@@ -78,11 +111,31 @@ BlackMetal = defeated_dragon
 BlackMarble = defeated_goblinking
 Flametal = defeated_queen
 Bloodgold = defeated_fader
+
+[TrophyPrices]
+TrophyBoar = 12
+TrophyDeer = 15
+TrophyNeck = 10
+TrophyEikthyr = 250
+; ... one line for each of the 72 trophies
 ```
 
 - `SuccessChance` accepts 0.05–0.99.
 - Leave a progression key empty to make that tier always available.
-- Prices are per single idol; the shop always sells one at a time.
+- Idol prices are per single idol; the shop always sells one at a time.
+- Trophy prices are 0–1,000,000 coins per trophy; `0` disables buying that trophy.
+
+### Editing the config while the game is running
+
+BepInEx itself does not watch the config file, so the mod runs its own watcher. Save the file
+(singleplayer or host) and about half a second later the new values are applied:
+
+- prices, progression keys, `Enabled` and `SuccessChance` are re-read from disk;
+- the open Haldor window is rebuilt in place — no need to close and reopen the shop;
+- `Config reloaded: ...` appears in `LogOutput.log` when the effective values changed.
+
+A client connected to a server cannot hot-reload: the host's synced values always win and would
+overwrite the edit on the next synchronization.
 
 ## Multiplayer and config authority
 
@@ -101,17 +154,17 @@ Bloodgold = defeated_fader
 The effective values are written to the log after a sync:
 
 ```
-[Haldor Idols] Config synchronized from server: Enabled=True, SuccessChance=80%, Wooden=50, Bloodgold=1000
+[Haldor Idols] Config synchronized from server: Enabled=True, TrophySelling=True, SuccessChance=80%, Wooden=50, Bloodgold=1000
 ```
 
 ## Trust model
 
 Prices and progression are enforced by the game client, exactly like vanilla Haldor prices:
 Valheim's trade window adds the item to the local inventory and removes the coins on the
-client. A modified client can therefore buy for less or unlock tiers early. The mod adds no
-network endpoints of its own and does not widen that surface; it also clamps every value it
-receives (prices 1–1,000,000, success chance 5–99%) so a malformed config cannot break the
-game.
+client. A modified client can therefore buy for less, unlock tiers early or sell trophies for
+more. The mod adds no network endpoints of its own and does not widen that surface; it also
+clamps every value it receives (idol prices 1–1,000,000, trophy prices 0–1,000,000, success
+chance 5–99%) so a malformed config cannot break the game.
 
 
 ## Installation
@@ -133,6 +186,9 @@ game.
 - Requires **BepInEx 5** and **Jotunn**.
 - Not compatible with mods that rebuild Haldor's shop UI or item list at the same time
   (for example **Haldor Expansion** or **Better Trader**). Use one of them at a time.
+- Trophy selling writes the sell value into the vanilla trophy prefabs. Another mod that also
+  changes trophy values may override them; turn `[Trophies] Enabled` off if you want the other
+  mod to own those values.
 - Safe to add to an existing world. Removing the mod only removes the shop rows; already bought
   idols stay in your inventory.
 
@@ -141,6 +197,8 @@ game.
 - Idols bought from Haldor are normal vanilla items: they can be stored, traded and used at the
   Forge of Potential.
 - The 80% chance applies to **all** idols, including ones found in chests.
+- Because trophies get a sell value, their tooltip shows that value while trophy selling is on.
+  Turning the feature off restores the vanilla value (0).
 - Multiplayer: install the same mod version on the server and on every client.
 
 ## Links

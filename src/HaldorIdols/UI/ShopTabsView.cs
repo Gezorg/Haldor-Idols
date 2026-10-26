@@ -15,8 +15,8 @@ namespace HaldorIdols
         private const float TabGap = 4f;
         private const float PanelGap = 8f;
         private const float ScreenMargin = 4f;
-        private const float MinTabWidth = 110f;
-        private const float MaxTabWidth = 220f;
+        private const float MinTabWidth = 72f;
+        private const float MaxTabWidth = 200f;
         private const float MinTabHeight = 32f;
         private const float MaxTabHeight = 56f;
 
@@ -29,16 +29,20 @@ namespace HaldorIdols
         private readonly RectTransform _root;
         private readonly Button[] _buttons = new Button[ShopTabsController.TabCount];
         private readonly TMP_Text[] _labels = new TMP_Text[ShopTabsController.TabCount];
+        private readonly RectTransform[] _tabRects = new RectTransform[ShopTabsController.TabCount];
         private readonly ColorBlock _nativeColors;
         private readonly Vector2 _tabSize;
         private readonly Vector3[] _corners = new Vector3[4];
 
+        private float _tabWidth;
         private int _lastScreenWidth;
         private int _lastScreenHeight;
         private Vector2 _lastPanelSize;
         private bool _loggedLayout;
 
-        internal bool IsAlive => _root != null;
+        internal bool IsAlive => _root != null && _panel != null && _host != null;
+
+        internal int TabCount => _buttons.Length;
 
         internal static ShopTabsView Create(StoreGui gui)
         {
@@ -72,6 +76,7 @@ namespace HaldorIdols
             float height = holderRect.height > 1f ? holderRect.height : 36f;
             _tabSize = new Vector2(Mathf.Clamp(width, MinTabWidth, MaxTabWidth),
                                    Mathf.Clamp(height, MinTabHeight, MaxTabHeight));
+            _tabWidth = ComputeTabWidth(panel.rect.width);
 
             var rootGo = new GameObject("HaldorIdols_Tabs", typeof(RectTransform));
             _root = (RectTransform)rootGo.transform;
@@ -94,8 +99,39 @@ namespace HaldorIdols
 
         private float TotalWidth()
         {
-            return ShopTabsController.TabCount * _tabSize.x +
-                   (ShopTabsController.TabCount - 1) * TabGap;
+            int count = Mathf.Max(1, _buttons.Length);
+            return count * _tabWidth + (count - 1) * TabGap;
+        }
+
+        /// <summary>
+        /// The native button width is a good default, but three tabs have to fit
+        /// above the window too, so the width is capped by the panel width.
+        /// </summary>
+        private float ComputeTabWidth(float panelWidth)
+        {
+            int count = Mathf.Max(1, _buttons.Length);
+            float width = _tabSize.x;
+
+            if (panelWidth > 1f)
+            {
+                float available = (panelWidth - (count - 1) * TabGap) / count;
+                if (available < width) width = available;
+            }
+
+            return Mathf.Clamp(width, MinTabWidth, MaxTabWidth);
+        }
+
+        private void ApplyTabRects()
+        {
+            for (int i = 0; i < _tabRects.Length; i++)
+            {
+                RectTransform rect = _tabRects[i];
+                if (rect == null) continue;
+
+                float x = i * (_tabWidth + TabGap);
+                rect.offsetMin = new Vector2(x, 0f);
+                rect.offsetMax = new Vector2(x + _tabWidth, 0f);
+            }
         }
 
         private void CreateTab(int index, Image sourceImage, TMP_Text textSource, ButtonSfx sfxSource)
@@ -107,8 +143,9 @@ namespace HaldorIdols
             rect.anchorMin = new Vector2(0f, 0f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 0.5f);
-            rect.offsetMin = new Vector2(index * (_tabSize.x + TabGap), 0f);
-            rect.offsetMax = new Vector2(index * (_tabSize.x + TabGap) + _tabSize.x, 0f);
+            rect.offsetMin = new Vector2(index * (_tabWidth + TabGap), 0f);
+            rect.offsetMax = new Vector2(index * (_tabWidth + TabGap) + _tabWidth, 0f);
+            _tabRects[index] = rect;
 
             var background = go.GetComponent<Image>();
             if (sourceImage != null)
@@ -265,6 +302,8 @@ namespace HaldorIdols
             _lastScreenHeight = Screen.height;
             _lastPanelSize = _panel.rect.size;
 
+            _tabWidth = ComputeTabWidth(_panel.rect.width);
+            ApplyTabRects();
             _root.sizeDelta = new Vector2(TotalWidth(), _tabSize.y);
 
             // Place the bar directly above the trader window, centred on it.
@@ -281,7 +320,7 @@ namespace HaldorIdols
             {
                 _loggedLayout = true;
                 Plugin.Log.LogInfo("Shop tabs placed: panel " + _panel.rect.width.ToString("0") + "x" +
-                                   _panel.rect.height.ToString("0") + ", tab " + _tabSize.x.ToString("0") + "x" +
+                                   _panel.rect.height.ToString("0") + ", tab " + _tabWidth.ToString("0") + "x" +
                                    _tabSize.y.ToString("0") + ", host '" + _host.name + "', pos " +
                                    _root.anchoredPosition);
             }

@@ -12,7 +12,12 @@ namespace HaldorIdols
     {
         internal const int TabGoods = 0;
         internal const int TabIdols = 1;
-        internal const int TabCount = 2;
+        internal const int TabSell = 2;
+
+        internal static int TabCount
+        {
+            get { return ModConfig.TrophySelling != null && ModConfig.TrophySelling.Value ? 3 : 2; }
+        }
 
         private static readonly MethodInfo FillListMethod = AccessTools.Method(typeof(StoreGui), "FillList");
         private static readonly FieldInfo TraderField = AccessTools.Field(typeof(StoreGui), "m_trader");
@@ -27,13 +32,41 @@ namespace HaldorIdols
 
         /// <summary>
         /// Number of rows StoreGui currently sees. Used to keep SelectItem safe
-        /// when a tab has no items at all.
+        /// when a tab has no items at all. Computed on demand because the player
+        /// can pick up or drop a trophy while the Sell tab is open.
         /// </summary>
-        internal static int VisibleCount => _uiAvailable ? _visibleCount : int.MaxValue;
+        internal static int VisibleCount
+        {
+            get
+            {
+                if (!_uiAvailable) return int.MaxValue;
+
+                StoreGui gui = StoreGui.instance;
+                Trader trader = gui != null && TraderField != null
+                    ? TraderField.GetValue(gui) as Trader
+                    : null;
+
+                if (trader == null) return _visibleCount;
+
+                try
+                {
+                    return GetVisibleItems(trader).Count;
+                }
+                catch (Exception)
+                {
+                    return _visibleCount;
+                }
+            }
+        }
 
         internal static string Token(int tab)
         {
-            return tab == TabIdols ? TabsLocalization.IdolsToken : TabsLocalization.GoodsToken;
+            switch (tab)
+            {
+                case TabIdols: return TabsLocalization.IdolsToken;
+                case TabSell: return TabsLocalization.SellToken;
+                default: return TabsLocalization.GoodsToken;
+            }
         }
 
         /// <summary>
@@ -44,6 +77,13 @@ namespace HaldorIdols
         internal static List<Trader.TradeItem> GetVisibleItems(Trader trader)
         {
             if (trader == null) return new List<Trader.TradeItem>(0);
+
+            if (_uiAvailable && _activeTab == TabSell)
+            {
+                List<Trader.TradeItem> sellable = TrophyShop.Items;
+                _visibleCount = sellable.Count;
+                return sellable;
+            }
 
             List<Trader.TradeItem> available = trader.GetAvailableItems();
             if (!_uiAvailable) return available;
@@ -78,6 +118,9 @@ namespace HaldorIdols
             if (!HaldorShop.IsHaldor(trader)) return;
 
             HaldorShop.Refresh(trader);
+
+            if (_activeTab == TabSell)
+                TrophyShop.RebuildIfDirty();
         }
 
         internal static void Sync(StoreGui gui)
@@ -86,6 +129,9 @@ namespace HaldorIdols
 
             Trader trader = TraderField != null ? TraderField.GetValue(gui) as Trader : null;
             bool wasAvailable = _uiAvailable;
+
+            if (_activeTab >= TabCount)
+                _activeTab = TabGoods;
 
             // The tab bar only belongs to Haldor; other traders keep vanilla UI.
             if (!HaldorShop.IsHaldor(trader) || !ModConfig.Enabled.Value || _uiFailed)
@@ -106,6 +152,14 @@ namespace HaldorIdols
             bool created = false;
             try
             {
+                // Enabling or disabling trophy selling changes the tab count,
+                // and the bar has to be rebuilt to match.
+                if (_view != null && _view.IsAlive && _view.TabCount != TabCount)
+                {
+                    _view.Dispose();
+                    _view = null;
+                }
+
                 if (_view == null || !_view.IsAlive)
                 {
                     _view = ShopTabsView.Create(gui);

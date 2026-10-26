@@ -42,7 +42,7 @@ namespace HaldorIdols
                 applied += ApplyTo(db, IdolCatalog.ArmorPrefabs[tier], chance);
             }
 
-            if (applied != _lastApplied || !Mathf.Approximately(chance, _lastChance))
+            if (applied > 0 && (applied != _lastApplied || !Mathf.Approximately(chance, _lastChance)))
             {
                 _lastApplied = applied;
                 _lastChance = chance;
@@ -72,6 +72,7 @@ namespace HaldorIdols
         private static void Postfix(ObjectDB __instance)
         {
             UpgradeTuning.Apply(__instance);
+            TrophyShop.ApplyPrices(__instance);
         }
     }
 
@@ -86,6 +87,7 @@ namespace HaldorIdols
         private static void Postfix(ObjectDB __instance)
         {
             UpgradeTuning.Apply(__instance);
+            TrophyShop.ApplyPrices(__instance);
         }
     }
 }
