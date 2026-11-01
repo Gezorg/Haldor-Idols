@@ -58,5 +58,22 @@ namespace HaldorIdols
         {
             return !string.IsNullOrEmpty(prefabName) && AllPrefabs.Contains(prefabName);
         }
+
+        /// <summary>
+        /// The other idol of the same tier: Battle (weapon) ↔ Protection (armor).
+        /// Returns null when the prefab is not one of the 16 idols.
+        /// </summary>
+        internal static string Counterpart(string prefabName)
+        {
+            if (string.IsNullOrEmpty(prefabName)) return null;
+
+            for (int i = 0; i < TierNames.Length; i++)
+            {
+                if (WeaponPrefabs[i] == prefabName) return ArmorPrefabs[i];
+                if (ArmorPrefabs[i] == prefabName) return WeaponPrefabs[i];
+            }
+
+            return null;
+        }
     }
 }

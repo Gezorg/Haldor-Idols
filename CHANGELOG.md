@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Added an idol exchange: in the **Idols** tab, a Battle idol can be swapped for a Protection idol of
+  the same tier (and back), 1:1 and free of charge. The exchange can be disabled in the config.
+
 ## 1.0.0
 
 - Added all 16 vanilla Battle and Protection idols to Haldor's shop.

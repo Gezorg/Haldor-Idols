@@ -8,6 +8,7 @@ namespace HaldorIdols
     {
         internal static ConfigEntry<bool> Enabled;
         internal static ConfigEntry<float> SuccessChance;
+        internal static ConfigEntry<bool> Exchange;
         internal static ConfigEntry<bool> TrophySelling;
 
         internal static readonly ConfigEntry<int>[] Prices = new ConfigEntry<int>[8];
@@ -32,6 +33,8 @@ namespace HaldorIdols
 
         internal static void Init(ConfigFile config)
         {
+            bool migrateTrophyToggle = MigrateTrophyToggle(config, out bool trophySellingDefault);
+
             Enabled = config.BindConfig(
                 "General",
                 "Enabled",
@@ -48,12 +51,12 @@ namespace HaldorIdols
                 true,
                 acceptableValues: new AcceptableValueRange<float>(0.05f, 0.99f));
 
-            TrophySelling = config.BindConfig(
-                "Trophies",
-                "Enabled",
+            Exchange = config.BindConfig(
+                "General",
+                "Exchange",
                 true,
-                "Let Haldor buy creature trophies from you in a separate Sell tab. " +
-                "When disabled, the tab is hidden and trophies keep their vanilla value.",
+                "Let the Idols tab exchange a Battle idol for a Protection idol of the same tier " +
+                "(and back), 1:1 and free of charge.",
                 true);
 
             for (int i = 0; i < IdolCatalog.TierNames.Length; i++)
@@ -76,6 +79,14 @@ namespace HaldorIdols
                     true);
             }
 
+            TrophySelling = config.BindConfig(
+                "TrophyPrices",
+                "Enabled",
+                trophySellingDefault,
+                "Let Haldor buy creature trophies from you in a separate Sell tab. " +
+                "When disabled, the tab is hidden and trophies keep their vanilla value.",
+                true);
+
             foreach (TrophyCatalog.Entry trophy in TrophyCatalog.Entries)
             {
                 TrophyPrices[trophy.Prefab] = config.BindConfig(
@@ -87,6 +98,47 @@ namespace HaldorIdols
                     true,
                     acceptableValues: new AcceptableValueRange<int>(0, 1000000));
             }
+
+            if (!migrateTrophyToggle) return;
+
+            try
+            {
+                // Removes the now-empty [Trophies] section from the file.
+                config.Save();
+            }
+            catch (System.Exception e)
+            {
+                Plugin.Log.LogWarning("Could not remove the obsolete [Trophies] section: " + e.Message);
+            }
+        }
+
+        /// <summary>
+        /// 1.0.1 moved the trophy switch from [Trophies] into [TrophyPrices].
+        /// BepInEx keeps keys that no plugin binds in OrphanedEntries, where
+        /// TryGetEntry cannot see them, so the old key is bound once to recover
+        /// the value chosen by existing installs. It is then removed and the
+        /// file is rewritten without the dead section. Returns true when a
+        /// legacy value was found.
+        /// </summary>
+        private static bool MigrateTrophyToggle(ConfigFile config, out bool trophySelling)
+        {
+            trophySelling = true;
+
+            // A string sentinel distinguishes "the key was absent" from a real
+            // true/false value, including an empty value in a hand-edited file.
+            const string absent = "\0";
+            ConfigEntry<string> legacy = config.Bind(
+                "Trophies",
+                "Enabled",
+                absent,
+                "Obsolete. Replaced by [TrophyPrices] Enabled.");
+
+            bool found = legacy.Value != absent;
+            if (found && bool.TryParse(legacy.Value, out bool parsed))
+                trophySelling = parsed;
+
+            config.Remove(legacy.Definition);
+            return found;
         }
 
         internal static int TrophyPrice(string prefabName)

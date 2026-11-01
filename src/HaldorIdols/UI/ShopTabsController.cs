@@ -24,11 +24,14 @@ namespace HaldorIdols
 
         private static int _activeTab = TabGoods;
         private static ShopTabsView _view;
+        private static SwapButtonView _swapView;
         private static bool _uiAvailable;
         private static bool _uiFailed;
         private static int _visibleCount;
 
         internal static int ActiveTab => _activeTab;
+
+        internal static bool UiAvailable => _uiAvailable;
 
         /// <summary>
         /// Number of rows StoreGui currently sees. Used to keep SelectItem safe
@@ -137,6 +140,8 @@ namespace HaldorIdols
             if (!HaldorShop.IsHaldor(trader) || !ModConfig.Enabled.Value || _uiFailed)
             {
                 _view?.SetVisible(false);
+                _swapView?.SetVisible(false);
+                if (gui.m_sellButton != null) gui.m_sellButton.gameObject.SetActive(true);
                 _uiAvailable = false;
                 if (_activeTab != TabGoods)
                 {
@@ -169,6 +174,24 @@ namespace HaldorIdols
                 _uiAvailable = true;
                 _view.SetVisible(true);
                 _view.Refresh();
+
+                // The exchange button is optional: if cloning the native button
+                // fails, the tabs and the shop must keep working.
+                try
+                {
+                    if (_swapView == null || !_swapView.IsAlive)
+                    {
+                        _swapView?.Dispose();
+                        _swapView = SwapButtonView.Create(gui);
+                    }
+                }
+                catch (Exception swapError)
+                {
+                    _swapView = null;
+                    Plugin.Log.LogWarning("Could not create the idol exchange button: " + swapError.Message);
+                }
+
+                ApplyFooter(gui);
             }
             catch (Exception e)
             {
@@ -180,6 +203,8 @@ namespace HaldorIdols
 
             // The first FillList of a session ran before the tab bar existed.
             if (created) RefreshList(gui);
+
+            _swapView?.UpdateState();
         }
 
         internal static void Select(int tab)
@@ -196,11 +221,17 @@ namespace HaldorIdols
 
             StoreGui gui = StoreGui.instance;
             if (gui != null && StoreGui.IsVisible()) RefreshList(gui);
+
+            ApplyFooter(gui);
+            _swapView?.UpdateState();
         }
 
-        internal static void OnHide()
+        internal static void OnHide(StoreGui gui)
         {
             _view?.SetVisible(false);
+            _swapView?.SetVisible(false);
+            if (gui != null && gui.m_sellButton != null)
+                gui.m_sellButton.gameObject.SetActive(true);
 
             // The next Show calls Sync(), which refreshes the bar for the Goods tab.
             _activeTab = TabGoods;
@@ -209,12 +240,15 @@ namespace HaldorIdols
         internal static void Tick()
         {
             _view?.Tick();
+            _swapView?.UpdateState();
         }
 
         internal static void OnDestroy()
         {
             _view?.Dispose();
             _view = null;
+            _swapView?.Dispose();
+            _swapView = null;
             _uiAvailable = false;
             _uiFailed = false;
             _visibleCount = 0;
@@ -236,6 +270,25 @@ namespace HaldorIdols
             HaldorShop.Refresh(trader);
             Sync(gui);
             RefreshList(gui);
+        }
+
+        /// <summary>
+        /// In the Idols tab the exchange button takes the native Sell button's
+        /// slot. When the exchange is disabled, or the button could not be
+        /// created, Sell stays exactly where vanilla puts it.
+        /// </summary>
+        private static void ApplyFooter(StoreGui gui)
+        {
+            if (gui == null) return;
+
+            bool swapReady = _swapView != null && _swapView.IsAlive;
+            bool showSwap = _uiAvailable && _activeTab == TabIdols
+                            && swapReady && SwapService.ExchangeEnabled;
+
+            if (gui.m_sellButton != null)
+                gui.m_sellButton.gameObject.SetActive(!showSwap);
+
+            _swapView?.SetVisible(showSwap);
         }
 
         private static void RefreshList(StoreGui gui)

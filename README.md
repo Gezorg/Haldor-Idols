@@ -22,11 +22,12 @@ The mod does three things:
 | Feature | Details |
 |---|---|
 | Idols tab | Haldor's window gets three tabs: vanilla goods under **Goods**, the 16 idols under **Idols**, trophy selling under **Sell**. |
+| Idol exchange | In the **Idols** tab, swap a Battle idol for a Protection idol of the same tier (and back), 1:1 and free. Can be disabled in the config. |
 | Progression | The next biome's idols unlock after you kill that biome's boss, exactly like Haldor Expansion. |
 | Prices | Every tier has its own price in the config file. Defaults: 50 → 1000 coins. |
 | Upgrade chance | All 16 idols use one roll. The default is vanilla's **65%**; set anything from 5% to 99% in the config. |
 | Trophy selling | Haldor buys 72 vanilla creature trophies at configurable prices. The whole feature can be switched off. |
-| Live config | Saving the `.cfg` while the game is running re-applies prices, progression, the upgrade chance and trophy prices. |
+| Live config | Saving the `.cfg` while the game is running re-applies prices, progression, the upgrade chance, trophy prices and the exchange toggle. |
 | Localization | Tab captions follow the game language (English and Russian included). |
 
 ## Default prices and progression
@@ -56,6 +57,15 @@ All 16 idols use the same roll, and the chance is a single config value. With th
 Raise `SuccessChance` if you want a friendlier refinement, lower it for a harsher economy.
 The roll happens on the client that performs the upgrade, which is why every player needs the mod.
 
+## Idol exchange
+
+Battle and Protection idols of the same tier cost the same, so buying the wrong one is not a dead
+end. Select the idol you want in the **Idols** tab; if you carry the other idol of that tier, the
+**Swap** button takes the place of Sell and exchanges them 1:1, free of charge.
+
+The exchange only works with idols in your inventory, only within the same tier, and never
+creates new items. It can be switched off with `Exchange` in the `[General]` section.
+
 ## Trophy selling
 
 Haldor buys every vanilla creature trophy in the **Sell** tab. Select a trophy in the list and
@@ -81,7 +91,7 @@ and `0` means Haldor does not buy that trophy.
 
 Trophy selling adds no custom items or assets: the mod only writes the sell value into the
 existing trophy prefabs and builds the Sell tab from your inventory. Turning
-`[Trophies] Enabled` off hides the tab and restores the vanilla value (trophies are not sellable).
+`[TrophyPrices] Enabled` off hides the tab and restores the vanilla value (trophies are not sellable).
 
 ## Configuration
 
@@ -98,9 +108,7 @@ On a dedicated server the host's values are sent to all clients.
 [General]
 Enabled = true
 SuccessChance = 0.65
-
-[Trophies]
-Enabled = true
+Exchange = true
 
 [Prices]
 Wooden = 50
@@ -123,6 +131,7 @@ Flametal = defeated_queen
 Bloodgold = defeated_fader
 
 [TrophyPrices]
+Enabled = true
 TrophyBoar = 12
 TrophyDeer = 15
 TrophyNeck = 10
@@ -133,6 +142,7 @@ TrophyEikthyr = 250
 - `SuccessChance` accepts 0.05–0.99; the default is 0.65, the vanilla value.
 - Leave a progression key empty to make that tier always available.
 - Idol prices are per single idol; the shop always sells one at a time.
+- `Exchange` toggles the idol exchange in the Idols tab; `[TrophyPrices] Enabled` toggles trophy selling.
 - Trophy prices are 0–1,000,000 coins per trophy; `0` disables buying that trophy.
 
 ### Editing the config while the game is running
@@ -140,7 +150,7 @@ TrophyEikthyr = 250
 BepInEx itself does not watch the config file, so the mod runs its own watcher. Save the file
 (singleplayer or host) and about half a second later the new values are applied:
 
-- prices, progression keys, `Enabled` and `SuccessChance` are re-read from disk;
+- prices, progression keys, `Enabled`, `Exchange` and `SuccessChance` are re-read from disk;
 - the open Haldor window is rebuilt in place — no need to close and reopen the shop;
 - `Config reloaded: ...` appears in `LogOutput.log` when the effective values changed.
 
@@ -197,7 +207,7 @@ chance 5–99%) so a malformed config cannot break the game.
 - Not compatible with mods that rebuild Haldor's shop UI or item list at the same time
   (for example **Haldor Expansion** or **Better Trader**). Use one of them at a time.
 - Trophy selling writes the sell value into the vanilla trophy prefabs. Another mod that also
-  changes trophy values may override them; turn `[Trophies] Enabled` off if you want the other
+  changes trophy values may override them; turn `[TrophyPrices] Enabled` off if you want the other
   mod to own those values.
 - Safe to add to an existing world. Removing the mod only removes the shop rows; already bought
   idols stay in your inventory.

@@ -94,9 +94,9 @@ namespace HaldorIdols
     [HarmonyPatch(typeof(StoreGui), "Hide")]
     internal static class StoreGuiHidePatch
     {
-        private static void Postfix()
+        private static void Postfix(StoreGui __instance)
         {
-            ShopTabsController.OnHide();
+            ShopTabsController.OnHide(__instance);
         }
     }
 

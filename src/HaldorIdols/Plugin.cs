@@ -17,7 +17,7 @@ namespace HaldorIdols
     {
         public const string ModGuid = "Gezorg.HaldorIdols";
         public const string ModName = "Haldor Idols";
-        public const string ModVersion = "1.0.0";
+        public const string ModVersion = "1.0.1";
 
         // BepInEx does not watch the config file, so a manual edit only reaches
         // the running game after a restart. This watcher closes that gap.
@@ -108,6 +108,7 @@ namespace HaldorIdols
             QueueRefresh();
             Log.LogInfo("Config reloaded: Enabled=" + ModConfig.Enabled.Value +
                         ", TrophySelling=" + ModConfig.TrophySelling.Value +
+                        ", Exchange=" + ModConfig.Exchange.Value +
                         ", SuccessChance=" + ModConfig.SuccessChance.Value.ToString("P0") +
                         ", Wooden=" + ModConfig.Prices[0].Value +
                         ", Bloodgold=" + ModConfig.Prices[7].Value);
@@ -131,6 +132,7 @@ namespace HaldorIdols
 
             Log.LogInfo("Config synchronized from server: Enabled=" + ModConfig.Enabled.Value +
                         ", TrophySelling=" + ModConfig.TrophySelling.Value +
+                        ", Exchange=" + ModConfig.Exchange.Value +
                         ", SuccessChance=" + ModConfig.SuccessChance.Value.ToString("P0") +
                         ", Wooden=" + ModConfig.Prices[0].Value +
                         ", Bloodgold=" + ModConfig.Prices[7].Value);
@@ -278,6 +280,7 @@ namespace HaldorIdols
 
             builder.Append(ModConfig.Enabled.Value).Append('|')
                    .Append(ModConfig.TrophySelling.Value).Append('|')
+                   .Append(ModConfig.Exchange.Value).Append('|')
                    .Append(ModConfig.SuccessChance.Value.ToString("R"));
 
             for (int i = 0; i < ModConfig.Prices.Length; i++)
